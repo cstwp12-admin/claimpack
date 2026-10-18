@@ -43,6 +43,9 @@ readme_index:
   enabled: false
 optional_front_matter:
   remove_originals: true
+include:
+  - README.md
+  - LICENSE.md
 
 defaults:
   - scope: { path: "" }
