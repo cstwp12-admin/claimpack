@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{%- assign page_title = page.title | default: site.title -%}
+<title>{% if page_title != site.title %}{{ page_title }} · {% endif %}{{ site.title }}</title>
+<meta name="description" content="{{ page.description | default: site.description }}">
+<meta name="theme-color" content="#14212B">
+<link rel="icon" href="{{ site.app_icon }}" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/docs.css">
+<style>:root{--accent:{{ site.accent | default: "#D9480F" }}}</style>
+</head>
+{%- assign is_home = false -%}{%- if page.name == "README.md" -%}{%- assign is_home = true -%}{%- endif -%}
+<body class="{% if is_home %}home{% endif %} {% if page.name == 'GUIDE.md' %}has-toc{% endif %}">
+{% include header.html %}
+{% if is_home %}{% include hero.html %}{% endif %}
+<div class="wrap layout">
+  {% if page.name == "GUIDE.md" %}<details class="toc" id="toc" open><summary>On this page</summary><nav aria-label="On this page"><ol></ol></nav></details>{% endif %}
+  <main class="doc" id="main">
+    {{ content }}
+  </main>
+</div>
+{% include footer.html %}
+<script src="assets/js/docs.js" defer></script>
+</body>
+</html>

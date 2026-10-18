@@ -1,0 +1,16 @@
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="plate">BETA</span>
+      <h1>{{ site.title }}</h1>
+      <p>{{ site.tagline }}</p>
+      <div class="cta"><a class="go big" href="{{ site.app_url }}">Open the app</a><a class="ghost big" href="GUIDE.html">Read the guide</a></div>
+      <p class="small">Free · no login · works offline · your claims stay on your phone</p>
+    </div>
+    {%- if site.hero_images -%}
+    <div class="shots" aria-hidden="true">
+      {%- for im in site.hero_images -%}<img src="{{ im }}" alt="" loading="lazy" class="s{{ forloop.index }}">{%- endfor -%}
+    </div>
+    {%- endif -%}
+  </div>
+</section>

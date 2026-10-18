@@ -1,0 +1,16 @@
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="README.html" aria-label="{{ site.title }} home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="#E9EDF0"/><path d="M7.5 7.5h9M7.5 11h9M7.5 14.5h6" stroke="#14212B" stroke-width="1.6" stroke-linecap="round"/><rect x="14.5" y="16.5" width="4.5" height="4.5" rx="1" fill="#E8590C"/></svg>
+      <span>{{ site.title }}</span>
+    </a>
+    <button class="menu" id="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav" id="nav">
+      {%- for item in site.nav -%}
+      {%- assign src = item.url | replace: ".html", ".md" -%}
+      <a href="{{ item.url }}"{% if page.name == src %} aria-current="page"{% endif %}>{{ item.title }}</a>
+      {%- endfor -%}
+      <a class="go" href="{{ site.app_url }}">Open the app</a>
+    </nav>
+  </div>
+</header>

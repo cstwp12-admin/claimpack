@@ -1,0 +1,55 @@
+# ClaimPack docs site — "Site Tools" Jekyll theme (in this repository, no gem needed).
+# GitHub Pages builds the .md files (README, GUIDE, CHANGELOG …) into pages with this theme.
+# index.html (the app) has no front matter, so Jekyll copies it unchanged.
+#
+# To reuse the theme in another app: copy _config.yml, _layouts/, _includes/ and assets/
+# into that repository and change the values below.
+
+title: ClaimPack
+tagline: Monthly claims, receipts and the claim form in one PDF
+description: Prepare your monthly expense claim on your phone. Receipts, e-invoices and the claim form in one submission PDF. Developed by WPN.
+developer: WPN
+app_url: ./              # where "Open the app" goes (the app is index.html in this folder)
+app_icon: icon.svg
+accent: "#D9480F"        # buttons and links; same orange as the app
+hero_images:             # pictures beside the title on the home page (wide screens)
+  - guide/pack_6_receipts.png
+  - guide/02_fuel_item.png
+nav:
+  - { title: Guide, url: GUIDE.html }
+  - { title: What's new, url: CHANGELOG.html }
+  - { title: Roadmap, url: ROADMAP.html }
+  - { title: About, url: README.html }
+footer_links:
+  - { title: Licence, url: LICENSE.html }
+  - { title: Third-party notices, url: THIRD-PARTY-NOTICES.html }
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter_opts:
+    disable: true
+
+# all of these come with GitHub Pages and are on by default; listed so the intent is clear
+plugins:
+  - jekyll-optional-front-matter   # .md files without front matter become pages
+  - jekyll-relative-links          # [Guide](GUIDE.md) links become GUIDE.html
+  - jekyll-titles-from-headings    # page title = first heading
+  - jekyll-default-layout
+relative_links:
+  enabled: true
+optional_front_matter:
+  remove_originals: true
+
+defaults:
+  - scope: { path: "" }
+    values: { layout: default }
+
+exclude:
+  - Reference/
+  - tools/
+  - "*.py"
+  - Gemfile
+  - Gemfile.lock
+  - vendor/

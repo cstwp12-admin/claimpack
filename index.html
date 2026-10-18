@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ClaimPack: prepare a monthly expense claim on your phone. Key in each receipt, attach the receipt and e-invoice, and get one submission PDF: cover, the monthly claim form filled in, a claim summary, a document index and every receipt numbered to match. Developed by WPN.">
+<title>ClaimPack</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14212B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/* Layout: single-column field tool (max 780px), sticky top bar, sticky bottom dock
+   with the one primary action. Same visual family as the timesheet app. */
+:root{
+  --bg:#EDF0F2; --surface:#FFFFFF; --sunk:#F5F7F8; --ink:#14212B; --muted:#596873; --line:#D3DAE0;
+  --accent:#D9480F; --accent-ink:#FFFFFF; --accent-soft:#FDEBDF; --ok:#2F7D3B; --ok-soft:#E3F2E5; --warn:#9A5B00; --warn-soft:#FBF0D9;
+  --chip:#E4E9ED; --scrim:rgba(14,22,28,.55); --shadow:0 1px 2px rgba(20,33,43,.08),0 4px 14px rgba(20,33,43,.06);
+  --bar:#14212B; --bar-ink:#EDF0F2;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-disp:"Barlow Condensed","Arial Narrow",var(--f-body);
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1418; --surface:#172027; --sunk:#121A20; --ink:#E6ECF0; --muted:#97A5AF; --line:#2A3640;
+  --accent:#FF7A33; --accent-ink:#1A0C03; --accent-soft:#3A2214; --ok:#6CC27A; --ok-soft:#18301D; --warn:#E3A93B; --warn-soft:#33270F;
+  --chip:#22303A; --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.3); --bar:#0A1014; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1418; --surface:#172027; --sunk:#121A20; --ink:#E6ECF0; --muted:#97A5AF; --line:#2A3640;
+  --accent:#FF7A33; --accent-ink:#1A0C03; --accent-soft:#3A2214; --ok:#6CC27A; --ok-soft:#18301D; --warn:#E3A93B; --warn-soft:#33270F;
+  --chip:#22303A; --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.3); --bar:#0A1014; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);margin:0}
+body{font-family:var(--f-body);font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:780px;margin:0 auto;padding-inline:16px}
+h1,h2,h3{font-family:var(--f-disp);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px}
+.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+a{color:var(--accent)}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:var(--bar);color:var(--bar-ink);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;gap:6px;padding-block:10px}
+.plate{font-family:var(--f-mono);font-weight:600;font-size:13px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:4px;padding:3px 7px;letter-spacing:.04em;flex:none}
+.top h1{font-size:21px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--bar-ink)}
+.tbtn2{flex:none;display:grid;justify-items:center;gap:1px;min-width:46px;padding:3px 4px;background:transparent;border:0;border-radius:8px;color:var(--bar-ink);font-size:10.5px;font-weight:600;letter-spacing:.02em}
+.tbtn2 svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tbtn2:active{background:rgba(255,255,255,.12)}
+.brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.brand svg{flex:none;width:22px;height:22px}
+@media (max-width:390px){.top h1{font-size:18.5px}.tbtn2{min-width:40px;padding-inline:2px}}
+@media (max-width:330px){.top h1{display:none}}
+.updbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--ok-soft);border:1px solid var(--ok);border-radius:var(--r);padding:10px 12px;font-size:14.5px}
+.updbar b{flex:1 1 200px}
+.helplist{display:grid;gap:8px}
+.helplist a,.helplist button{display:grid;gap:2px;text-align:left;border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none}
+.helplist b{font-size:16px} .helplist span{font-size:13px;color:var(--muted)}
+
+main{padding-block:14px 120px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.panel-h h2{font-size:19px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.one{grid-template-columns:minmax(0,1fr)}
+@media (max-width:520px){.grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.span2{grid-column:1/-1}
+input[type=text],input[type=number],input[type=date],input[type=month],input[type=password],input:not([type]),select,textarea{width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px}
+textarea{min-height:64px;resize:vertical}
+input[readonly]{opacity:.85}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg.multi button[aria-pressed="true"]::before{content:"✓ "}
+.seghint{font-size:13px;color:var(--muted);margin-top:4px}
+.linkbtn{background:none;border:none;color:var(--accent);font-weight:600;padding:6px 2px;text-decoration:underline;text-underline-offset:3px}
+.collapsed-summary{font-size:14px;color:var(--muted);margin-bottom:8px}
+.collapsed-summary b{color:var(--ink)}
+
+/* month picker */
+.monthbar{display:flex;align-items:center;gap:8px;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:6px}
+.monthbar .mname{flex:1;text-align:center;line-height:1.1}
+.monthbar .mname b{display:block;font-family:var(--f-disp);font-size:24px}
+.monthbar .mname span{font-size:12.5px;color:var(--muted)}
+.navbtn{width:42px;height:42px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:22px;line-height:1}
+
+/* big buttons */
+.addbar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.addbar{grid-template-columns:1fr}}
+.bigbtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid var(--ink);background:var(--surface);border-radius:var(--r);padding:12px 14px;text-align:left;min-height:64px;color:var(--ink)}
+.bigbtn b{font-family:var(--f-disp);font-size:19px}
+.bigbtn span{font-size:13px;color:var(--muted)}
+.bigbtn.primary{background:var(--ink);color:var(--bg)}
+.bigbtn.primary span{color:color-mix(in srgb,var(--bg) 75%,transparent)}
+.addtype{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:-2px}
+.addtype .lbl{margin:0}
+.listhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.listhead h2{font-size:19px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.tbtn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:13.5px;font-weight:600;min-height:36px}
+.tbtn.danger{color:var(--accent)}
+.tag{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:600;background:var(--chip);color:var(--ink);white-space:nowrap}
+.tag.ok{background:var(--ok-soft);color:var(--ok)} .tag.need{background:var(--warn-soft);color:var(--warn)}
+
+/* claim item cards */
+.rglist{display:grid;gap:10px}
+.rgrow{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;min-width:0;background:var(--surface)}
+.rgrow .t{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;justify-content:space-between}
+.rgrow .t b{font-family:var(--f-disp);font-size:19px}
+.rgrow .s{font-size:13.5px;color:var(--muted)}
+.rgrow .amount,.item .amount{font-family:var(--f-mono);font-weight:600;font-size:16px;white-space:nowrap}
+.item{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-width:0}
+.item.open{border-color:var(--ink);box-shadow:var(--shadow)}
+.item>.ihead{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:11px 12px;color:var(--ink)}
+.ref{font-family:var(--f-mono);font-weight:600;font-size:13px;background:var(--chip);border-radius:6px;padding:4px 7px}
+.item.ready .ref{background:var(--ok-soft);color:var(--ok)}
+.ihead .mid{min-width:0;display:grid;gap:1px}
+.ihead .mid b{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ihead .mid span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ihead .right{display:grid;justify-items:end;gap:2px}
+.ihead .right small{font-size:11.5px;font-weight:600}
+.ihead .right small.ok{color:var(--ok)} .ihead .right small.need{color:var(--warn)}
+.item>.ibody{border-top:1px solid var(--line);padding:12px;display:grid;gap:10px}
+.calc{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.calc .auto{color:var(--ok);font-weight:600}
+.calc button{border:0;background:none;color:var(--accent);font-weight:600;padding:0;text-decoration:underline;font-size:12.5px}
+.ibtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.rmbtn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;color:var(--ink);min-height:34px}
+.rmbtn.danger{color:var(--accent)}
+.docs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.docs{grid-template-columns:1fr}}
+.doc{border:1px dashed var(--line);border-radius:9px;padding:9px 10px;background:var(--sunk);display:grid;gap:6px;align-content:start}
+.doc.has{border-style:solid;border-color:var(--ok)}
+.doc label.dl{font-size:12.5px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.doc .dref{font-family:var(--f-mono);color:var(--ink)}
+.doc .filemeta{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docrow{display:flex;gap:6px;flex-wrap:wrap}
+.docrow .btnlike{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;min-height:34px;cursor:pointer}
+.docrow .btnlike:disabled{opacity:.45}
+.confirmline{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
+.confirmline input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+.status{border-radius:8px;padding:8px 10px;font-size:13px;background:var(--warn-soft);color:var(--warn)}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+
+/* summary */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--sunk);border-radius:9px;padding:9px 10px;min-width:0}
+.stat b{display:block;font-family:var(--f-mono);font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat span{font-size:12.5px;color:var(--muted)}
+.checks{display:grid;gap:6px;margin-top:10px;font-size:14.5px}
+.checks .ok{color:var(--ok)} .checks .need{color:var(--warn)}
+.warns{display:grid;gap:6px;margin-top:10px}
+.warns div{font-size:13.5px;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:7px 10px}
+.bytype{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+.bytype td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.bytype td.n{font-family:var(--f-mono);text-align:right;white-space:nowrap}
+.bytype td.l{color:var(--muted);font-size:12.5px}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.flow button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:6px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px;color:var(--ink);min-width:0}
+.flow i{grid-row:1/3;font-style:normal;font-family:var(--f-mono);font-weight:600;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--chip);font-size:13px}
+.flow b{font-size:14px;line-height:1.1}
+.flow span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow .done{background:var(--ok-soft);border-color:var(--ok)} .flow .done i{background:var(--ok);color:#fff} .flow .done span{color:var(--ok)}
+.flow .cur{border:2px solid var(--accent);padding:7px} .flow .cur i{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:420px){.flow i{display:none}.flow button{grid-template-columns:1fr}}
+
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:16px;display:grid;gap:8px;background:var(--surface)}
+.steps{display:grid;gap:10px;margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;counter-increment:s}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-weight:600;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--chip)}
+
+/* pack options */
+.packlist{display:grid;gap:6px;margin-top:10px}
+.packlist label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:var(--sunk);font-size:14.5px}
+.packlist label input{width:19px;height:19px;accent-color:var(--accent);margin-top:1px;flex:none}
+.packlist label span{display:grid;gap:1px;min-width:0;flex:1}
+.packlist label small{color:var(--muted);font-size:12.5px}
+.packlist .more{justify-self:start}
+.optgroup{display:grid;gap:6px}
+.optgroup h4{margin:6px 0 0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.dock .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.dock .stat2{flex:1;min-width:0;font-size:14px;line-height:1.25}
+.dock .stat2 b{font-family:var(--f-mono);font-size:17px}
+.go{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;padding:12px 18px;font-weight:700;font-size:16px;min-height:48px}
+.go:disabled{opacity:.45;cursor:not-allowed}
+
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:40;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.sheet>.box{background:var(--surface);width:100%;max-width:780px;max-height:calc(100% - 24px - env(safe-area-inset-top,0px));border-radius:14px 14px 0 0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (min-width:800px){.sheet{align-items:center}.sheet>.box{border-radius:14px;max-height:88%}}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sheet-h h3{flex:1;font-size:20px;min-width:0}
+.sheet-h .sub{display:block;font-family:var(--f-body);font-weight:500;font-size:13.5px;color:var(--muted)}
+.sheet-b{overflow:auto;padding:14px 16px;display:grid;gap:12px;align-content:start;grid-auto-rows:max-content}
+.sheet-f{border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 14px;font-weight:600;min-height:44px;color:var(--ink);text-decoration:none}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.acc{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.sm{min-height:34px;padding:5px 12px;font-size:14px}
+.btn.danger{color:var(--accent);border-color:var(--accent)}
+.btn:disabled{opacity:.45}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.out-actions{display:grid;gap:10px}
+.oa{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px}
+.oa>b{flex:1 1 9em;min-width:0;font-size:16px}
+.oa>p{flex-basis:100%;margin:0;font-size:13.5px;color:var(--muted)}
+.preview{background:#9AA5AD;border-radius:9px;padding:8px;overflow:auto;-webkit-overflow-scrolling:touch;display:grid;gap:10px}
+.preview canvas{display:block;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);max-width:100%;height:auto;margin:0 auto}
+.thumbs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.thumbs button{flex:none;border:1px solid var(--line);background:var(--sunk);border-radius:7px;padding:4px 8px;font-size:12.5px;font-weight:600}
+.thumbs button[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sugline{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.sugline input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.sugline .sf{display:grid;gap:2px}
+.sugline .sf b{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.qrbox{display:grid;justify-items:center;gap:10px;text-align:center}
+.qrbox .qr{background:#fff;padding:12px;border-radius:12px;width:min(260px,70vw)}
+.qrbox .qr svg{display:block;width:100%;height:auto}
+.qrbox .url{font-family:var(--f-mono);font-size:13px;word-break:break-all;color:var(--muted)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;max-width:calc(100% - 32px);font-size:14.5px;box-shadow:var(--shadow)}
+.busy{position:fixed;inset:0;z-index:95;background:var(--scrim);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600}
+.credit{text-align:center;font-size:13px;color:var(--muted);margin:6px 0 0;display:grid;gap:4px;justify-items:center}
+.credit button{font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.top,.dock,.addbar,.tools{display:none!important}main{padding:0}}
+
+/* document references: R receipt (orange), E e-invoice (blue), S other support (green) — same colours as the PDF */
+.dref{font-family:var(--f-mono);font-weight:700;font-size:12px;color:#fff;border-radius:5px;padding:1px 6px}
+.dref.R,.chip.R{background:#C2410C}.dref.E,.chip.E{background:#1D4ED8}.dref.S,.chip.S{background:#15803D}
+.chips{display:inline-flex;gap:3px;vertical-align:middle}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:10px;font-weight:700;color:#fff;border-radius:4px;padding:0 4px;line-height:15px}
+.chip.off{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.doc.has.R{border-color:#C2410C}.doc.has.E{border-color:#1D4ED8}.doc.has.S{border-color:#15803D}
+/* drag and drop (desktop) */
+.dropzone{position:fixed;inset:0;z-index:80;background:rgba(14,22,28,.55);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.dropzone div{background:var(--surface);color:var(--ink);border:3px dashed var(--accent);border-radius:16px;padding:26px 30px;text-align:center;max-width:420px;font-size:15px}
+.dropzone b{display:block;font-family:var(--f-disp);font-size:24px;margin-bottom:4px}
+.item.droptarget,.doc.droptarget{outline:3px dashed var(--accent);outline-offset:2px}
+/* camera: receipt scanner (messages move to the top so they do not cover its buttons) */
+.cam:not([hidden]) ~ .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
+.cam{position:fixed;inset:0;z-index:70;background:#000;color:#fff;display:flex;flex-direction:column}
+.cam-top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;background:rgba(0,0,0,.6)}
+.cam-top b{flex:1;font-size:16px}
+.cam-top .cbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:6px 12px;font-weight:600;font-size:14px}
+.cam-view{position:relative;flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none}
+.cam-view video,.cam-view canvas.base{max-width:100%;max-height:100%;display:block}
+.cam-view canvas.ovl{position:absolute;pointer-events:none}
+.cam-hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 12px;border-radius:999px;font-size:13.5px;white-space:nowrap}
+.cam-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(0,0,0,.75);flex-wrap:wrap}
+.cam-bar .cbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;min-height:44px}
+.cam-bar .cbtn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+.shutter{width:70px;height:70px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.25)}
+.shutter:active{background:#fff}
+.cam .seg button{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff}
+.cam .seg button[aria-pressed="true"]{background:#fff;color:#000}
+.handle{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid var(--accent);background:rgba(217,72,15,.25);touch-action:none;cursor:grab}
+
+/* ---- Admin 27 sheet ---- */
+.a27sec{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.a27sec>h3{font-size:14.5px;padding:9px 12px;background:var(--sunk);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:center;letter-spacing:.02em}
+.a27sec>h3 .amount{font-family:var(--f-mono);font-size:14px;font-weight:600}
+.a27sec .body{padding:12px;display:grid;gap:10px}
+.a27line{display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:8px;align-items:center}
+.a27line .lbl{font-size:14px;min-width:0;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:500;margin:0}
+.a27line input[type=number]{text-align:right}
+.a27total{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--f-disp);font-size:19px;padding:12px 14px;border:1.5px solid var(--ink);border-radius:var(--r);background:var(--surface)}
+.a27total b{font-family:var(--f-mono);font-size:20px}
+.a27grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.a27grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:560px){.a27grid,.a27grid.three{grid-template-columns:1fr}.a27line{grid-template-columns:minmax(0,1fr) 100px}}
+.a27hint{font-size:13px;color:var(--muted);margin:0}
+.modebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:10px 12px}
+.modebar p{margin:0;flex:1 1 220px;font-size:13.5px;color:var(--muted)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .preview{background:#0A0F13}:root:not([data-theme="light"]) .plate{color:#1A0C03}}
+:root[data-theme="dark"] .preview{background:#0A0F13}
+:root[data-theme="dark"] .plate{color:#1A0C03}
+@media (max-width:360px){.wrap{padding-inline:12px}.panel{padding:12px}.top h1{font-size:17px}}
+@media (max-width:340px){.stats{grid-template-columns:1fr 1fr}.bigbtn b{font-size:17px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <button class="plate" id="btn-records-plate" type="button" title="Open records">—</button>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="#E9EDF0"/><path d="M7.5 7.5h9M7.5 11h9M7.5 14.5h6" stroke="#14212B" stroke-width="1.6" stroke-linecap="round"/><rect x="14.5" y="16.5" width="4.5" height="4.5" rx="1" fill="#E8590C"/></svg>
+      <h1>ClaimPack</h1>
+    </div>
+    <button class="tbtn2" id="btn-help" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.8" r=".6" fill="currentColor"/></svg><span>Help</span></button>
+    <button class="tbtn2" id="btn-records" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="3.5" width="15" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Records</span></button>
+    <button class="tbtn2" id="btn-setup" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Setup</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="notices"></div>
+
+  <section class="panel" id="sec-details" aria-labelledby="h-details">
+    <div class="panel-h"><h2 id="h-details">Claim details</h2><button class="linkbtn" id="btn-collapse" type="button">Hide</button></div>
+    <div id="details-summary" class="collapsed-summary" hidden></div>
+    <div id="details-form" class="grid">
+      <div class="span2">
+        <span class="lbl">Claim month</span>
+        <div class="monthbar">
+          <button class="navbtn" id="m-prev" type="button" aria-label="Previous month">‹</button>
+          <div class="mname"><b id="m-name">—</b><span id="m-sub">—</span></div>
+          <button class="navbtn" id="m-next" type="button" aria-label="Next month">›</button>
+        </div>
+      </div>
+      <div><label class="lbl" for="d-claimant">Claimant name</label><input type="text" id="d-claimant" autocomplete="name" placeholder="As printed on the form"></div>
+      <div><label class="lbl" for="d-designation">Designation</label><input type="text" id="d-designation" placeholder="e.g. Site Engineer"></div>
+      <div><label class="lbl" for="d-project">Project / contract</label><input type="text" id="d-project" placeholder="e.g. Road upgrading, Package 3"></div>
+      <div><label class="lbl" for="d-code">Project code (optional)</label><input type="text" id="d-code" placeholder="Printed after your name, e.g. S1234" autocapitalize="characters"></div>
+      <div class="span2"><span class="lbl">Claim types in this submission</span><div class="seg multi" id="seg-type" role="group" aria-label="Claim types"></div><div class="seghint">Pick every type you are claiming this month — e.g. Fuel and Parking / toll. Each item then goes to the right line on the claim form.</div></div>
+      <div id="fuel-fields" class="grid span2" hidden>
+        <div><label class="lbl" for="d-vehicle">Vehicle registration</label><input type="text" id="d-vehicle" placeholder="e.g. QAA 1234" autocapitalize="characters"></div>
+        <div><span class="lbl">Vehicle</span><div class="seg" id="seg-own" role="group" aria-label="Vehicle status"><button type="button" data-own="Company">Company</button><button type="button" data-own="Own">Own</button></div></div>
+      </div>
+      <div><label class="lbl" for="d-subdate">Submission date</label><input type="date" id="d-subdate"></div>
+    </div>
+  </section>
+
+  <div class="flow" id="flow" role="group" aria-label="Claim steps"></div>
+
+  <section aria-labelledby="h-items" style="display:grid;gap:10px">
+    <div class="listhead"><h2 id="h-items">Claim items</h2><div class="tools"><button class="tbtn" id="btn-expand" type="button">Expand all</button><button class="tbtn" id="btn-summary-copy" type="button">Copy as text</button><button class="tbtn danger" id="btn-clear-items" type="button">Clear items</button></div></div>
+    <div class="addtype" id="addtype-wrap" hidden><span class="lbl">New item type</span><div class="seg" id="seg-addtype" role="group" aria-label="Type for new items"></div></div>
+    <div class="addbar">
+      <button class="bigbtn primary" id="btn-add" type="button"><b>＋ Add item</b><span id="add-sub">Key in the receipt, then attach it</span></button>
+      <button class="bigbtn" id="btn-camera" type="button"><b>Scan receipt</b><span>Camera: crop, straighten and clean the photo into a new item</span></button>
+      <button class="bigbtn" id="btn-batch" type="button" style="grid-column:1/-1"><b>Add several receipts at once</b><span id="batch-sub">Pick photos or PDFs — one item each, then key in the details</span></button>
+    </div>
+    <div class="rglist" id="entries"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-sum" id="sec-sum">
+    <div class="panel-h"><h2 id="h-sum">Summary &amp; checks</h2></div>
+    <div class="stats" id="stats"></div>
+    <table class="bytype" id="bytype"></table>
+    <div class="checks" id="checks"></div>
+    <div class="warns" id="warns"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-export" id="sec-export">
+    <div class="panel-h"><h2 id="h-export">Submission pack</h2></div>
+    <p class="small muted" style="margin:0 0 10px">One PDF, in this order. Untick anything you don't need.</p>
+    <div class="packlist" id="packlist"></div>
+    <div class="btns" style="margin-top:8px"><button class="btn sm" id="btn-a27" type="button">Check claim form</button><button class="btn sm" id="btn-sumopts" type="button">Summary contents…</button><button class="btn sm" id="btn-attopts" type="button">Receipt layout…</button></div>
+    <div class="addbar" style="margin-top:12px">
+      <button class="bigbtn primary" id="btn-export" type="button"><b>Generate PDF</b><span>Build the submission pack and preview it</span></button>
+      <button class="bigbtn" id="btn-preview" type="button"><b>Preview / share</b><span>Page through, then share, save or print</span></button>
+    </div>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn sm" id="btn-csv" type="button">Export CSV</button>
+      <button class="btn sm" id="btn-share" type="button" disabled>Share PDF</button>
+    </div>
+    <p class="small muted" id="export-status" role="status" style="margin:8px 0 0"></p>
+  </section>
+
+  <div class="credit"><span id="credit-line">ClaimPack</span><span><button class="linkbtn" id="btn-shareapp2" type="button">Share this app (QR code)</button> · <a class="linkbtn fb-link" href="#" target="_blank" rel="noopener">Feedback</a></span></div>
+</main>
+
+<aside class="dock">
+  <div class="wrap">
+    <div class="stat2" id="dock-stat">—</div>
+    <button class="go" id="dock-go" type="button">Generate PDF</button>
+  </div>
+</aside>
+
+<!-- records -->
+<div class="sheet" id="sh-rec" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="rec-title">
+  <div class="sheet-h"><h3 id="rec-title">Records<span class="sub">Claims on this phone</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b">
+    <div class="btns"><button class="btn pri" id="rec-new" type="button">＋ Next month's claim</button><button class="btn" id="rec-blank" type="button">Blank claim</button></div>
+    <p class="small muted" style="margin:0"><b>Next month's claim</b> copies your name, designation, project, claim types and vehicle — the items start empty.</p>
+    <div class="rglist" id="rec-list"></div>
+  </div>
+</div></div>
+
+<!-- help -->
+<div class="sheet" id="sh-help" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet-h"><h3 id="help-title">Help<span class="sub" id="help-sub">How the monthly claim works</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b">
+    <ol class="steps small">
+      <li><span><b>Claim details</b>: month, your name, project and every <b>claim type</b> in this submission (e.g. Fuel and Parking / toll).</span></li>
+      <li><span><b>Add item</b> for each receipt, or <b>Scan receipt</b> (crops and straightens the photo), or <b>Add several receipts at once</b> — on a computer, drag files onto the page. Key in the date, merchant and amount — for fuel, litres × price fills the amount. <b>Read</b> can suggest values; always check them.</span></li>
+      <li><span>Attach the <b>receipt</b>, its <b>e-invoice</b> and any <b>other</b> support, then tick the box. Each item gets a number (01, 02…) and every document a colour-coded reference (<b style="color:#C2410C">01-R</b> receipt, <b style="color:#1D4ED8">01-E</b> e-invoice, <b style="color:#15803D">01-S</b> other) printed on its page.</span></li>
+      <li><span><b>Check claim form</b>: it fills itself from your items. Add outstation trip details if you have any.</span></li>
+      <li><span><b>Generate PDF</b> → page through → <b>Share</b>, <b>Save</b> or print at A4 actual size. Sign the claim form and staple the original receipts behind <b>Appendix A</b> at the end.</span></li>
+    </ol>
+    <div class="helplist">
+      <a href="GUIDE.html" data-doc target="_blank" rel="noopener"><b>User guide</b><span>Full walkthrough with screenshots</span></a>
+      <button type="button" id="btn-shareapp"><b>Share this app</b><span>Show a QR code a colleague can scan</span></button>
+      <a class="fb-link" href="#" target="_blank" rel="noopener"><b>Send feedback</b><span>A problem or an idea, on WhatsApp. The app version and your phone type are filled in.</span></a>
+      <a href="CHANGELOG.html" data-doc target="_blank" rel="noopener"><b>What's new</b><span>Version history</span></a>
+    </div>
+    <div id="whats-new" hidden></div>
+    <p class="small muted" style="margin:0">ClaimPack prepares the claim. It does not submit it and does not decide what is claimable — follow your company's policy. Everything stays on this device. Developed by WPN.</p>
+  </div>
+</div></div>
+
+<!-- share app -->
+<div class="sheet" id="sh-share" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="share-title">
+  <div class="sheet-h"><h3 id="share-title">Share this app<span class="sub">A colleague scans this with the phone camera</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b">
+    <div class="qrbox"><div class="qr" id="qr-app"></div><div class="url" id="qr-url">—</div></div>
+    <div class="btns" style="justify-content:center"><button class="btn pri" id="qr-share" type="button">Share link</button><button class="btn" id="qr-copy" type="button">Copy link</button></div>
+    <p class="small muted" style="margin:0;text-align:center">Only the app link is shared — your claims and receipts stay on this phone.<br>ClaimPack · developed by WPN</p>
+  </div>
+</div></div>
+
+<!-- setup -->
+<div class="sheet" id="sh-setup" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+  <div class="sheet-h"><h3 id="setup-title">Setup<span class="sub">Form wording, backup, appearance and app information</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b">
+    <div class="rgrow">
+      <div class="t"><b>Feedback</b></div>
+      <div class="s">Found a problem or have an idea? Send it on WhatsApp. The app version and your phone type are filled in for you.</div>
+      <div class="btns"><a class="btn sm acc fb-link" href="#" target="_blank" rel="noopener">Send feedback on WhatsApp</a></div>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>Claim form note line</b></div>
+      <div class="s">Who checks the claims at your office, printed in the note under the total: <i>Kindly pass to <b id="s-checker-show"></b> for checking purposes.</i> Change it only if your office uses someone else.</div>
+      <div><label class="lbl" for="s-checker">Pass to</label><input type="text" id="s-checker" placeholder=""></div>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>Backup</b></div>
+      <div class="s">Saves every claim and attached document to one file. Do this before clearing the browser or changing phone.</div>
+      <div class="btns"><button class="btn sm pri" id="s-export" type="button">Export backup file</button><button class="btn sm" id="s-restore" type="button">Restore from backup</button></div>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>AI scan (Gemini, optional)</b></div>
+      <div class="s">Reads handwriting and faded receipts with Google Gemini. Get a free API key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and paste it here. The key stays <b>only on this device</b>; a document is sent to Google only when you scan it. Without a key, the offline scanner is used.</div>
+      <div class="grid">
+        <div><label class="lbl" for="s-key">Gemini API key</label><input type="password" id="s-key" placeholder="AIza…" autocomplete="off"></div>
+        <div><label class="lbl" for="s-model">Model</label><input type="text" id="s-model" placeholder="gemini-3.5-flash"></div>
+      </div>
+      <div class="btns"><button class="btn sm" id="s-test" type="button">Test key</button><button class="btn sm pri" id="s-save-ai" type="button">Save AI settings</button></div>
+      <p class="small muted" id="s-ai-status" role="status" style="margin:0"></p>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>Appearance</b></div>
+      <div class="seg" id="seg-theme" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-opt="auto">Auto</button>
+        <button type="button" data-theme-opt="light">Light</button>
+        <button type="button" data-theme-opt="dark">Dark</button>
+      </div>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>Delete data on this phone</b></div>
+      <div class="s">Removes every claim and attached document from this device. This cannot be undone.</div>
+      <div class="btns"><button class="btn sm danger" id="s-reset" type="button">Delete all data</button></div>
+    </div>
+    <div class="rgrow">
+      <div class="t"><b>About</b><span class="tag" id="s-version">—</span></div>
+      <div class="s">ClaimPack · monthly claim submission. No server, no login: claims and documents stay in this browser on this device. Developed by <b>WPN</b>.</div>
+      <div class="btns"><button class="btn sm" id="s-shareapp" type="button">Share this app</button></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- PDF preview -->
+<div class="sheet" id="sh-pdf" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="pdf-title">
+  <div class="sheet-h"><h3 id="pdf-title">Submission PDF<span class="sub" id="pdf-sub">Page through every page before you submit</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b">
+    <div class="out-actions">
+      <div class="oa"><b>Share / save</b><button class="btn acc" id="pdf-share" type="button">Share PDF</button><button class="btn" id="pdf-save" type="button">Save</button><button class="btn" id="pdf-open" type="button">Open to print</button><p id="pdf-info">A4 pages. Print at actual size (100%).</p></div>
+    </div>
+    <div class="thumbs" id="pdf-jump" aria-label="Jump to section"></div>
+    <div class="btns"><button class="btn sm" id="pdf-prev" type="button">‹ Previous</button><span class="small mono" id="pdf-page-label">—</span><button class="btn sm" id="pdf-next" type="button">Next ›</button></div>
+    <div class="preview" id="pdf-preview"></div>
+  </div>
+</div></div>
+
+<!-- OCR suggestions -->
+<div class="sheet" id="sh-sug" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="sug-title">
+  <div class="sheet-h"><h3 id="sug-title">Scan suggestions<span class="sub">Read from your document — may be wrong</span></h3><button class="btn sm" data-close type="button">Cancel</button></div>
+  <div class="sheet-b">
+    <p class="small muted" style="margin:0">Untick anything wrong, fix the text, then apply. Always compare with the original document.</p>
+    <div id="sug-list" style="display:grid;gap:8px"></div>
+  </div>
+  <div class="sheet-f"><button class="btn" id="sug-cancel" type="button">Cancel</button><button class="btn pri" id="sug-apply" type="button">Apply ticked values</button></div>
+</div></div>
+
+<!-- claim form -->
+<div class="sheet" id="sh-a27" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="a27-title">
+  <div class="sheet-h"><h3 id="a27-title">Claim form<span class="sub">Filled from your items — printed as the original form</span></h3><button class="btn sm" data-close type="button">Close</button></div>
+  <div class="sheet-b" id="a27-body"></div>
+  <div class="sheet-f">
+    <button class="btn" id="a27-preview" type="button">Preview the form</button>
+    <button class="btn pri" id="a27-done" type="button">Done</button>
+  </div>
+</div></div>
+
+<!-- summary options -->
+<div class="sheet" id="sh-sumopts" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="sumopts-title">
+  <div class="sheet-h"><h3 id="sumopts-title">Summary contents<span class="sub">Choose what the claim summary shows</span></h3><button class="btn sm" data-close type="button">Done</button></div>
+  <div class="sheet-b" id="sumopts-body"></div>
+</div></div>
+
+<!-- attachment options -->
+<div class="sheet" id="sh-attopts" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="attopts-title">
+  <div class="sheet-h"><h3 id="attopts-title">Receipt layout<span class="sub">How the supporting documents are arranged</span></h3><button class="btn sm" data-close type="button">Done</button></div>
+  <div class="sheet-b" id="attopts-body"></div>
+</div></div>
+
+<!-- camera: receipt scanner -->
+<div class="cam" id="cam" hidden>
+  <div class="cam-top"><b id="cam-title">Scan receipt</b><button class="cbtn" id="cam-close" type="button">Cancel</button></div>
+  <div class="cam-view" id="cam-view"><span class="cam-hint" id="cam-hint"></span></div>
+  <div class="cam-bar" id="cam-bar"></div>
+</div>
+<div class="dropzone" id="dropzone" hidden><div><b>Drop to add</b><span id="drop-msg">Drop receipts or e-invoices here — each file becomes a new item.<br>Drop onto an item, or onto its Receipt / E-invoice / Other box, to attach it there.</span></div></div>
+<input type="file" id="f-scan" accept="image/*" capture="environment" hidden>
+<input type="file" id="f-batch" accept="image/*,application/pdf" multiple hidden>
+<input type="file" id="f-restore" accept=".json,application/json" hidden>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="busy" id="busy" hidden><span id="busy-msg">Working…</span></div>
+
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/qrcode.min.js"></script>
+<script src="app.js"></script>
+<script src="scanner.js"></script>
+</body>
+</html>
