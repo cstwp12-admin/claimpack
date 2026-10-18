@@ -39,6 +39,8 @@ plugins:
   - jekyll-default-layout
 relative_links:
   enabled: true
+readme_index:
+  enabled: false
 optional_front_matter:
   remove_originals: true
 
